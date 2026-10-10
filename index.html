@@ -325,6 +325,16 @@
             box-shadow: 0 2px 12px rgba(0, 0, 0, .18)
         }
 
+        :root[data-theme=sepia] .pg {
+            background: #ebe0d1;
+        }
+
+        :root[data-theme=dark] .pg,
+        :root[data-theme=black] .pg {
+            background: #191919;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, .5);
+        }
+
         :root[data-theme=sepia] .pg canvas {
             filter: sepia(.4) brightness(.96)
         }
