@@ -1,0 +1,18 @@
+{
+  "name": "Shelf \u2014 your reading space",
+  "short_name": "Shelf",
+  "description": "A calm, private reading space for your personal library.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f5f3ee",
+  "theme_color": "#f5f3ee",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
