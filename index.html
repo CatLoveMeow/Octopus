@@ -107,6 +107,13 @@ input[type=range]{width:100%;accent-color:var(--ac)}
 @media(max-width:700px){body[data-v=read] .rail{display:none}}
 html.lock,html.lock body{overflow:hidden}.sheet{overscroll-behavior:contain}#scrim{background:rgba(0,0,0,.5);backdrop-filter:blur(2px)}
 .chip{display:inline-flex;align-items:center;gap:6px}#toast b{display:grid}#pill .ib.on svg{fill:currentColor}.ib svg,.btn svg{flex:none}.big svg{color:var(--ac)}
+.det{display:flex;gap:24px;padding:22px;margin-bottom:8px}.dc{width:clamp(120px,30vw,200px);flex:none}.di{min-width:0;flex:1}.di h1{font-size:clamp(24px,5vw,38px);line-height:1.1;overflow-wrap:anywhere}.au{color:var(--dim);margin:6px 0 12px}.acts{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+@media(max-width:560px){.det{flex-direction:column;align-items:center;text-align:center}.dc{width:150px}.acts,.rdt{justify-content:center}}
+article{padding:28px var(--pad);hyphens:var(--hy)}article p{margin:0 0 var(--ps)}
+html:not([data-drop="1"]) article p:first-of-type::first-letter{font:inherit;float:none;margin:0;color:inherit}
+[data-pst=indent] article p{margin:0;text-indent:1.5em}
+[data-plain="1"] article{background:none;border:0;box-shadow:none;backdrop-filter:none;border-radius:0;width:100%}
+@media(max-width:700px){[data-plain="1"] article{margin-top:78px}}
 </style>
 </head>
 <body>
@@ -128,14 +135,16 @@ const $=s=>document.querySelector(s),esc=s=>String(s).replace(/[&<>"]/g,c=>({'&'
 const P={"home": "<path d=\"M3 11l9-8 9 8\"/><path d=\"M5 10v10h5v-6h4v6h5V10\"/>", "plus": "<path d=\"M12 5v14M5 12h14\"/>", "book": "<path d=\"M2 5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v15a2 2 0 0 0-2-2H2z\"/><path d=\"M22 5a2 2 0 0 0-2-2h-6a2 2 0 0 0-2 2v15a2 2 0 0 1 2-2h8z\"/>", "palette": "<circle cx=\"13.5\" cy=\"6.5\" r=\"1\"/><circle cx=\"17.5\" cy=\"10.5\" r=\"1\"/><circle cx=\"8.5\" cy=\"7.5\" r=\"1\"/><circle cx=\"6.5\" cy=\"12.5\" r=\"1\"/><path d=\"M12 2a10 10 0 1 0 0 20c1.1 0 2-.9 2-2 0-.5-.2-1-.5-1.3-.3-.4-.5-.8-.5-1.3 0-1.1.9-2 2-2h2.4a4 4 0 0 0 4-4C21 6 17 2 12 2z\"/>", "back": "<path d=\"M19 12H5M12 19l-7-7 7-7\"/>", "menu": "<path d=\"M4 6h16M4 12h16M4 18h10\"/>", "type": "<path d=\"M4 7V5h16v2M9 19h6M12 5v14\"/>", "bookmark": "<path d=\"M6 3h12v18l-6-4-6 4z\"/>", "headphones": "<path d=\"M3 14v-2a9 9 0 0 1 18 0v2\"/><path d=\"M21 15v3a2 2 0 0 1-2 2h-1v-6h3zM3 15v3a2 2 0 0 0 2 2h1v-6H3z\"/>", "left": "<path d=\"m15 18-6-6 6-6\"/>", "right": "<path d=\"m9 18 6-6-6-6\"/>", "trash": "<path d=\"M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14\"/>", "play": "<path d=\"M7 4l13 8-13 8z\" fill=\"currentColor\"/>", "flame": "<path d=\"M12 2c1 4 5 5 5 10a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-4-1-6 1-9z\"/>", "clock": "<circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M12 7v5l3 2\"/>", "lib": "<path d=\"M4 4h4v16H4zM10 4h4v16h-4zM16 5l4-1 2 15-4 1z\"/>", "check": "<path d=\"m5 12 5 5 9-10\"/>", "alert": "<path d=\"M12 3 2 20h20zM12 10v5M12 18v.01\"/>", "pen": "<path d=\"m4 20 4-1L19 8l-3-3L5 16zM14 7l3 3\"/>"};const ic=(n,z=22)=>`<svg viewBox="0 0 24 24" width="${z}" height="${z}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[n]}</svg>`;
 const ACC=['#3B82F6','#10B981','#F59E0B','#EF4444','#8B5CF6','#EC4899'],DES=['sketch','flat','retro','glass','neon'],MODES=['auto','light','dark','sepia'];
 const ld=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch{return d}},sv=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));return true}catch{toast('Storage full. Remove a book to free space.','err');return false}};
-let lib=ld('shelf2:lib',[]).filter(b=>b&&b.id&&b.title&&b.pos&&b.n),cfg=Object.assign({design:'flat',mode:'auto',ac:0,fs:21,lh:1.8,w:700,ta:'left',serif:1},ld('shelf2:cfg',{})),days=ld('shelf2:days',{});
+let lib=ld('shelf2:lib',[]).filter(b=>b&&b.id&&b.title&&b.pos&&b.n),cfg=Object.assign({design:'flat',mode:'auto',ac:0,fs:21,lh:1.8,w:700,ta:'left',serif:1,plain:0,pad:24,drop:0,hy:0,ps:1.1,pst:'space',wake:0},ld('shelf2:cfg',{})),days=ld('shelf2:days',{});
 let view='home',cur=null,chs=[],ci=0,sort='recent',q='',tick=null,away=false,lastY=0;
 const save=()=>sv('shelf2:lib',lib),today=()=>new Date().toISOString().slice(0,10);
 function theme(){const r=document.documentElement;r.dataset.design=cfg.design;r.dataset.mode=cfg.mode=='auto'?(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'):cfg.mode;r.style.setProperty('--ac',cfg.design=='retro'?'#000080':ACC[cfg.ac]);
  r.style.setProperty('--fs',cfg.fs+'px');r.style.setProperty('--lh',cfg.lh);r.style.setProperty('--w',cfg.w+'px');r.style.setProperty('--ta',cfg.ta);
- r.style.setProperty('--rf',cfg.serif?(cfg.design=='sketch'?'"Patrick Hand",cursive':'Fraunces,Georgia,serif'):'var(--fb)');sv('shelf2:cfg',cfg);const tc=document.querySelector('meta[name=theme-color]');if(tc)tc.content=getComputedStyle(r).getPropertyValue('--bg').trim()||'#fff'}
+ r.style.setProperty('--rf',cfg.serif==2?'ui-monospace,Menlo,Consolas,monospace':cfg.serif?(cfg.design=='sketch'?'"Patrick Hand",cursive':'Fraunces,Georgia,serif'):'var(--fb)');r.style.setProperty('--pad',cfg.pad+'px');r.style.setProperty('--ps',cfg.ps+'em');r.style.setProperty('--hy',cfg.hy?'auto':'manual');r.dataset.plain=cfg.plain;r.dataset.drop=cfg.drop;r.dataset.pst=cfg.pst;wake();sv('shelf2:cfg',cfg);const tc=document.querySelector('meta[name=theme-color]');if(tc)tc.content=getComputedStyle(r).getPropertyValue('--bg').trim()||'#fff'}
 function toast(t,k){const e=$('#toast');e.className=k=='err'?'err':'';e.innerHTML='<b>'+ic(k=='err'?'alert':'check',18)+'</b><span>'+esc(t)+'</span>';requestAnimationFrame(()=>e.classList.add('on'));clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('on'),k=='err'?4200:2200)}
 function busy(t,p){const b=$('#busy');if(t==null){b.classList.add('hid');return}b.classList.remove('hid');$('#bt').textContent=t;$('#bi').style.width=(p||0)+'%'}
+let wl=null;async function wake(){try{if(cfg.wake&&view=='read'&&'wakeLock' in navigator&&!wl){wl=await navigator.wakeLock.request('screen');wl.addEventListener('release',()=>wl=null)}else if((!cfg.wake||view!='read')&&wl){wl.release();wl=null}}catch{}}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)wake()});
 function setAway(a){away=a;$('#bar')?.classList.toggle('away',a);$('#pill')?.classList.toggle('away',a)}
 function navOn(v){const m={home:'home',add:'add',read:'resume'};document.querySelectorAll('.rail .ib[data-a]').forEach(b=>b.classList.toggle('on',b.dataset.a==m[v]))}
 const grad=t=>{let h=0;for(const c of t)h=(h*31+c.charCodeAt(0))%360;return`linear-gradient(150deg,hsl(${h} 70% 48%),hsl(${(h+50)%360} 70% 36%))`};
@@ -175,7 +184,7 @@ async function readFiles(fs){const t=$('#ttl'),a=$('#aut'),c=$('#cvu');for(const
  try{if(ext=='epub'||ext=='pdf'){busy('Importing '+f.name+'…',2);const r=await(ext=='epub'?parseEpub:parsePdf)(await f.arrayBuffer());addBook((t&&t.value)||r.title||nm,(a&&a.value)||r.author,'',(c&&c.value)||r.cover,r.chapters)}
  else if(/^(txt|md|text)$/.test(ext))addBook(nm,a&&a.value,await f.text(),c&&c.value);else toast('Supported: PDF, EPUB, TXT, MD','err')}catch(err){toast('Import failed: '+err.message,'err')}finally{busy()}}}
 /* views */
-function go(v){view=v;stopSay();clearInterval(tick);document.body.dataset.v=v;navOn(v);$('#prog').style.width=0;closeSheets();
+function go(v){view=v;stopSay();clearInterval(tick);document.body.dataset.v=v;navOn(v);wake();$('#prog').style.width=0;closeSheets();
  if(v=='home')home();else if(v=='add')add();window.scrollTo(0,0)}
 function home(){let L=lib.filter(b=>(b.title+b.author).toLowerCase().includes(q.toLowerCase()));
  L.sort((a,b)=>sort=='title'?a.title.localeCompare(b.title):sort=='rating'?b.rating-a.rating:sort=='progress'?pct(b)-pct(a):sort=='recent'?(b.last||b.added)-(a.last||a.added):b.added-a.added);
@@ -183,7 +192,7 @@ function home(){let L=lib.filter(b=>(b.title+b.author).toLowerCase().includes(q.
  $('#app').innerHTML=`<div class="top"><div><h1>Shelf</h1><p>Your own webnovel-style library.</p></div><div class="stats"><span class="chip">${ic('flame',16)} ${streak()}-day streak</span><span class="chip">${ic('clock',16)} ${mins()} min today</span><span class="chip">${ic('lib',16)} ${lib.length} ${lib.length==1?'book':'books'}</span></div></div>
  ${r?`<div class="card cont">${cover(r)}<div style="flex:1;min-width:0"><h2>${esc(r.title)}</h2><p>Chapter ${r.pos.c+1} of ${r.n} · ${pct(r)}% done</p><div class="bar" style="margin:0 0 14px"><i style="width:${pct(r)}%"></i></div><button class="btn" data-a="open" data-id="${r.id}">${ic('play',16)} Continue reading</button></div></div>`:''}
  <div class="tools"><input class="fld" id="q" placeholder="Search your library…" value="${esc(q)}" aria-label="Search"><select class="fld" id="so" aria-label="Sort">${[['recent','Recently read'],['added','Newest added'],['title','Title A–Z'],['progress','Progress'],['rating','Top rated']].map(o=>`<option value="${o[0]}" ${sort==o[0]?'selected':''}>${o[1]}</option>`).join('')}</select></div>
- ${L.length?`<div class="grid">${L.map(b=>`<div class="book card"><button class="open" data-a="open" data-id="${b.id}">${cover(b)}<div class="m"><b>${esc(b.title)}</b><small>${esc(b.author)}</small><small>${b.n} ch · ${pct(b)}% read</small>${b.rating?`<div class="rt">${'★'.repeat(b.rating)}</div>`:''}<div class="bar"><i style="width:${pct(b)}%"></i></div></div></button><button class="del" data-a="del" data-id="${b.id}" aria-label="Delete ${esc(b.title)}">${ic('trash',16)}</button></div>`).join('')}</div>`
+ ${L.length?`<div class="grid">${L.map(b=>`<div class="book card"><button class="open" data-a="detail" data-id="${b.id}">${cover(b)}<div class="m"><b>${esc(b.title)}</b><small>${esc(b.author)}</small><small>${b.n} ch · ${pct(b)}% read</small>${b.rating?`<div class="rt">${'★'.repeat(b.rating)}</div>`:''}<div class="bar"><i style="width:${pct(b)}%"></i></div></div></button><button class="del" data-a="del" data-id="${b.id}" aria-label="Delete ${esc(b.title)}">${ic('trash',16)}</button></div>`).join('')}</div>`
  :`<div class="card empty"><h2>${lib.length?'No matches':'Your shelf is empty'}</h2><p style="color:var(--dim)">${lib.length?'Try a different search.':'Add a .txt or .md book to start reading.'}</p>${lib.length?'':'<button class="btn" data-a="add">'+ic('plus',18)+' Add your first book</button>'}</div>`}`;
  const qi=$('#q');qi.oninput=e=>{q=e.target.value;const p=e.target.selectionStart;home();const n=$('#q');n.focus();n.setSelectionRange(p,p)};$('#so').onchange=e=>{sort=e.target.value;home()}}
 function add(){$('#app').innerHTML=`<div class="top"><div><h1>Add a book</h1><p>Chapters are detected automatically. Everything stays on this device.</p></div></div>
@@ -195,7 +204,14 @@ function add(){$('#app').innerHTML=`<div class="top"><div><h1>Add a book</h1><p>
  ['dragenter','dragover'].forEach(n=>d.addEventListener(n,e=>{e.preventDefault();d.classList.add('over')}));['dragleave','drop'].forEach(n=>d.addEventListener(n,e=>{e.preventDefault();d.classList.remove('over')}));d.addEventListener('drop',e=>readFiles([...e.dataTransfer.files]));
  $('#pb').onclick=()=>{const t=$('#paste').value.trim();t?addBook($('#ttl').value||'Pasted text',$('#aut').value,t,$('#cvu').value):toast('Paste some text first.')}}
 /* reader */
-function openBook(id,c,p){cur=lib.find(b=>b.id==id);if(!cur)return;chs=ld('shelf2:t:'+id,[]);if(!chs.length)return toast('Book text is missing.');view='read';document.body.dataset.v='read';navOn('read');
+function detail(id){const b=lib.find(x=>x.id==id);if(!b)return;stopSay();closeSheets();view='book';document.body.dataset.v='book';navOn('home');wake();const t=ld('shelf2:t:'+id,[]);
+ $('#app').innerHTML=`<button class="btn sec" data-a="home" style="margin-bottom:18px">${ic('back',18)} Library</button>
+ <div class="card det"><div class="dc">${cover(b)}</div><div class="di"><h1>${esc(b.title)}</h1><p class="au">${esc(b.author)}</p><p style="margin:0 0 10px;color:var(--dim)">${b.n} chapters · ~${Math.round(b.words/1000)}k words · ${pct(b)}% read</p>
+ <div class="rdt">${[1,2,3,4,5].map(n=>`<button data-a="rate2" data-id="${b.id}" data-n="${n}" aria-label="${n} stars" style="font-size:28px;line-height:1;padding:2px 3px;color:${n<=b.rating?'#F59E0B':'var(--dim)'}">${n<=b.rating?'★':'☆'}</button>`).join('')}</div>
+ <div class="bar" style="margin-top:12px"><i style="width:${pct(b)}%"></i></div>
+ <div class="acts"><button class="btn" data-a="open" data-id="${b.id}">${ic('play',16)} ${b.last?'Continue reading':'Start reading'}</button><button class="btn sec" data-a="del" data-id="${b.id}">${ic('trash',16)} Remove</button></div></div></div>
+ <h3 style="margin:26px 0 10px">Chapters</h3><div class="card" style="padding:8px">${t.map((c,i)=>`<button class="row ${b.last&&i==b.pos.c?'cur':''}" data-a="openc" data-id="${b.id}" data-i="${i}">${esc(c.t)}<small>${b.last&&i<b.pos.c?'Read':b.last&&i==b.pos.c?'Continue here':''}</small></button>`).join('')}</div>`;window.scrollTo(0,0)}
+function openBook(id,c,p){cur=lib.find(b=>b.id==id);if(!cur)return;chs=ld('shelf2:t:'+id,[]);if(!chs.length)return toast('Book text is missing.');view='read';document.body.dataset.v='read';navOn('read');wake();
  cur.last=Date.now();save();draw(c??cur.pos.c,p??cur.pos.p);clearInterval(tick);let s=0;tick=setInterval(()=>{if(document.hidden)return;s+=15;if(s>=60){s=0;days[today()]=(days[today()]||0)+1;sv('shelf2:days',days)}},15000)}
 function paint(t){let h=esc(t);(cur.hl||[]).filter(x=>x.c==ci).forEach(x=>{const e=esc(x.s);h=h.replace(e,'<mark>'+e+'</mark>')});return h}
 function draw(c,p=0){ci=Math.max(0,Math.min(chs.length-1,c));const ch=chs[ci];
@@ -218,8 +234,11 @@ function settings(){const seg=(k,o)=>`<div class="seg">${o.map(x=>`<button class
  sheet('set',`<h3>Appearance</h3><div class="lab">Design</div><div class="des">${DES.map(d=>`<button class="${cfg.design==d?'on':''}" data-a="cfg" data-k="design" data-v="${d}">${d[0].toUpperCase()+d.slice(1)}</button>`).join('')}</div>
  <div class="lab">Mode</div>${seg('mode',MODES.map(m=>[m,m[0].toUpperCase()+m.slice(1)]))}<div class="lab">Accent</div><div class="sw">${ACC.map((c,i)=>`<button class="${cfg.ac==i?'on':''}" style="background:${c}" data-a="cfg" data-k="ac" data-v="${i}" aria-label="Accent ${i+1}"></button>`).join('')}</div>
  <div class="lab"><span>Text size</span><span>${cfg.fs}px</span></div><input type="range" min="15" max="32" value="${cfg.fs}" data-r="fs"><div class="lab"><span>Line height</span><span>${cfg.lh}</span></div><input type="range" min="1.3" max="2.4" step=".1" value="${cfg.lh}" data-r="lh">
- <div class="lab"><span>Page width</span><span>${cfg.w}px</span></div><input type="range" min="420" max="1000" step="20" value="${cfg.w}" data-r="w"><div class="lab">Alignment</div>${seg('ta',[['left','Left'],['justify','Justify']])}<div class="lab">Font</div>${seg('serif',[[1,'Serif'],[0,'Sans']])}`);
- document.querySelectorAll('[data-r]').forEach(r=>r.oninput=e=>{cfg[r.dataset.r]=+e.target.value;theme();r.previousElementSibling.lastChild.textContent=e.target.value+(r.dataset.r=='lh'?'':'px')})}
+ <div class="lab"><span>Page width</span><span>${cfg.w}px</span></div><input type="range" min="420" max="1000" step="20" value="${cfg.w}" data-r="w"><div class="lab">Alignment</div>${seg('ta',[['left','Left'],['justify','Justify']])}<div class="lab">Font</div>${seg('serif',[[1,'Serif'],[0,'Sans'],[2,'Mono']])}
+ <div class="lab">Layout</div>${seg('plain',[[0,'Card'],[1,'Text only']])}<div class="lab"><span>Side margin</span><span>${cfg.pad}px</span></div><input type="range" min="0" max="80" step="2" value="${cfg.pad}" data-r="pad">
+ <div class="lab">Paragraphs</div>${seg('pst',[['space','Spaced'],['indent','Indented']])}<div class="lab"><span>Paragraph gap</span><span>${cfg.ps}em</span></div><input type="range" min="0.2" max="2" step=".1" value="${cfg.ps}" data-r="ps">
+ <div class="lab">Drop cap</div>${seg('drop',[[0,'Off'],[1,'On']])}<div class="lab">Hyphenation</div>${seg('hy',[[0,'Off'],[1,'On']])}<div class="lab">Keep screen on</div>${seg('wake',[[0,'Off'],[1,'On']])}`);
+ document.querySelectorAll('[data-r]').forEach(r=>r.oninput=e=>{cfg[r.dataset.r]=+e.target.value;theme();r.previousElementSibling.lastChild.textContent=e.target.value+({lh:'',ps:'em'}[r.dataset.r]??'px')})}
 /* listen */
 let sp=null;function stopSay(){try{window.speechSynthesis&&speechSynthesis.cancel()}catch{}sp=null;document.querySelectorAll('p.say').forEach(p=>p.classList.remove('say'));const b=$('#sy');if(b)b.classList.remove('on')}
 function say(){if(sp)return stopSay();if(!('speechSynthesis' in window))return toast('Listening is not supported here.');const ps=[...document.querySelectorAll('article p')];let i=0;sp=1;$('#sy').classList.add('on');
@@ -227,7 +246,8 @@ function say(){if(sp)return stopSay();if(!('speechSynthesis' in window))return t
 /* events */
 document.addEventListener('click',e=>{const t=e.target.closest('[data-a]');if(!t)return;const a=t.dataset.a,d=t.dataset;
  if(a=='home')go('home');else if(a=='add')go('add');else if(a=='resume'){const r=lib.filter(b=>b.last).sort((a,b)=>b.last-a.last)[0]||lib[0];r?openBook(r.id):toast('Add a book first.')}
- else if(a=='open')openBook(d.id);else if(a=='del'){if(confirm('Remove this book from your shelf?')){lib=lib.filter(b=>b.id!=d.id);localStorage.removeItem('shelf2:t:'+d.id);save();home()}}
+ else if(a=='open')openBook(d.id);else if(a=='del'){if(confirm('Remove this book from your shelf?')){lib=lib.filter(b=>b.id!=d.id);localStorage.removeItem('shelf2:t:'+d.id);save();go('home')}}
+ else if(a=='detail')detail(d.id);else if(a=='openc')openBook(d.id,+d.i,0);else if(a=='rate2'){const b=lib.find(x=>x.id==d.id);b.rating=b.rating==+d.n?0:+d.n;save();detail(d.id)}
  else if(a=='set')settings();else if(a=='toc')toc();else if(a=='tab')toc(d.t);else if(a=='goto'){closeSheets();stopSay();draw(+d.i)}
  else if(a=='next'){stopSay();draw(ci+1)}else if(a=='prev'){stopSay();draw(ci-1)}else if(a=='say')say();
  else if(a=='mark'){const k=cur.marks.indexOf(ci);k<0?cur.marks.push(ci):cur.marks.splice(k,1);save();t.classList.toggle('on',k<0);toast(k<0?'Bookmarked':'Bookmark removed')}
