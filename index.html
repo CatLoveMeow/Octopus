@@ -116,12 +116,12 @@ input[type=range]{width:100%;accent-color:var(--ac)}
 const $=s=>document.querySelector(s),esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const ACC=['#3B82F6','#10B981','#F59E0B','#EF4444','#8B5CF6','#EC4899'],DES=['sketch','flat','retro','glass','neon'],MODES=['light','dark','sepia'];
 const ld=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch{return d}},sv=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));return true}catch{toast('Storage full. Remove a book to free space.');return false}};
-let lib=ld('shelf:lib',[]),cfg=Object.assign({design:'flat',mode:'light',ac:0,fs:21,lh:1.8,w:700,ta:'left',serif:1},ld('shelf:cfg',{})),days=ld('shelf:days',{});
+let lib=ld('shelf2:lib',[]).filter(b=>b&&b.id&&b.title&&b.pos&&b.n),cfg=Object.assign({design:'flat',mode:'light',ac:0,fs:21,lh:1.8,w:700,ta:'left',serif:1},ld('shelf2:cfg',{})),days=ld('shelf2:days',{});
 let view='home',cur=null,chs=[],ci=0,sort='recent',q='',tick=null,away=false,lastY=0;
-const save=()=>sv('shelf:lib',lib),today=()=>new Date().toISOString().slice(0,10);
+const save=()=>sv('shelf2:lib',lib),today=()=>new Date().toISOString().slice(0,10);
 function theme(){const r=document.documentElement;r.dataset.design=cfg.design;r.dataset.mode=cfg.mode;r.style.setProperty('--ac',cfg.design=='retro'?'#000080':ACC[cfg.ac]);
  r.style.setProperty('--fs',cfg.fs+'px');r.style.setProperty('--lh',cfg.lh);r.style.setProperty('--w',cfg.w+'px');r.style.setProperty('--ta',cfg.ta);
- r.style.setProperty('--rf',cfg.serif?(cfg.design=='sketch'?'"Patrick Hand",cursive':'Fraunces,Georgia,serif'):'var(--fb)');sv('shelf:cfg',cfg)}
+ r.style.setProperty('--rf',cfg.serif?(cfg.design=='sketch'?'"Patrick Hand",cursive':'Fraunces,Georgia,serif'):'var(--fb)');sv('shelf2:cfg',cfg)}
 function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('on'),1800)}
 const grad=t=>{let h=0;for(const c of t)h=(h*31+c.charCodeAt(0))%360;return`linear-gradient(150deg,hsl(${h} 70% 48%),hsl(${(h+50)%360} 70% 36%))`};
 const cover=b=>`<div class="cv" style="background:${b.cover?`url(${esc(b.cover)}) center/cover`:grad(b.title)}">${b.cover?'':esc(b.title)}</div>`;
@@ -133,7 +133,7 @@ function split(txt){txt=txt.replace(/\r/g,'').trim();const re=/^\s*((chapter|par
  let out=[];if(idx.length>=2){idx.forEach((x,k)=>{const body=txt.slice(x.i+txt.slice(x.i).indexOf('\n'),idx[k+1]?idx[k+1].i:undefined).trim();if(body.length>40)out.push({t:x.t,x:body})})}
  if(out.length<2){out=[];const ps=txt.split(/\n\s*\n/);let buf=[],w=0;ps.forEach(p=>{buf.push(p);w+=p.split(/\s+/).length;if(w>2800){out.push({t:'Part '+(out.length+1),x:buf.join('\n\n')});buf=[];w=0}});if(buf.length)out.push({t:'Part '+(out.length+1),x:buf.join('\n\n')})}return out}
 function addBook(title,author,txt,cv){const c=split(txt);if(!c.length)return toast('That file has no readable text.');const id='b'+Date.now();
- if(!sv('shelf:t:'+id,c))return;lib.unshift({id,title:title||'Untitled',author:author||'Unknown',n:c.length,words:txt.split(/\s+/).length,added:Date.now(),last:0,rating:0,cover:cv||'',pos:{c:0,p:0},marks:[],hl:[]});save();toast('Added “'+(title||'Untitled')+'”');go('home')}
+ if(!sv('shelf2:t:'+id,c))return;lib.unshift({id,title:title||'Untitled',author:author||'Unknown',n:c.length,words:txt.split(/\s+/).length,added:Date.now(),last:0,rating:0,cover:cv||'',pos:{c:0,p:0},marks:[],hl:[]});save();toast('Added “'+(title||'Untitled')+'”');go('home')}
 async function readFiles(fs){const t=$('#ttl'),a=$('#aut'),c=$('#cvu');for(const f of fs){if(!/\.(txt|md|text)$/i.test(f.name)){toast('Use .txt or .md files for now.');continue}addBook((fs.length==1&&t&&t.value)||f.name.replace(/\.\w+$/,'').replace(/[_-]+/g,' '),a&&a.value,await f.text(),c&&c.value)}}
 /* views */
 function go(v){view=v;stopSay();clearInterval(tick);document.body.dataset.v=v;$('#prog').style.width=0;closeSheets();
@@ -153,4 +153,4 @@ function add(){$('#app').innerHTML=`<div class="top"><div><h1>Add a book</h1><p>
  <div id="drop" class="card"><div class="big">📚</div><h2>Drop .txt or .md files here</h2><p>Or pick them from your device</p><button class="btn" id="pick">Choose files</button><input type="file" id="fi" accept=".txt,.md,.text" multiple hidden></div>
  <label for="paste" style="display:block;margin-top:18px">Or paste text</label><textarea class="fld" id="paste" placeholder="Paste a story or article…"></textarea><button class="btn" id="pb" style="margin-top:10px">Add pasted text</button>`;
  const d=$('#drop');$('#pick').onclick=()=>$('#fi').click();$('#fi').onchange=e=>readFiles([...e.target.files]);
- ['dragenter','dragover'].forEach(n=>d.addEventListener(n,e=>{e.preventDefault();d.classList.add('over')}));['dragleave','drop'].forEach(n=>d.addEventListener(n,e=>{e.preventDefault();d.classList.remove('over')}));d.addEventListener('drop',e=>readFiles([...e
+ ['dragenter','dragover'].forEach(n=>d.addEventListener(n,e=>{e.preventDefault();d.classList.add('over')}));['dragleave','drop'].forEach(n=>d.addEventListener(n,e=>{e.preventDefault();d.classList.remove('over')})
