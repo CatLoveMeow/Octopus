@@ -1,37 +1,19 @@
-# Shelf — release starter
-
-A local-first reading library built with vanilla HTML, CSS and JavaScript.
-
-## Files
-- `index.html` — app
-- `manifest.webmanifest` — installable PWA metadata
-- `sw.js` — minimal app-shell service worker
-- `icon.svg` — app icon
+# Shelf — expanded local-first reader
 
 ## Run locally
-Some browser APIs (especially service workers) require HTTPS or localhost. From this folder run:
+Run `python3 -m http.server 8000` in this folder and open `http://localhost:8000`. PWA/service-worker behavior requires localhost or HTTPS.
 
-```bash
-python3 -m http.server 8000
-```
+## Features
+- Import EPUB, PDF, TXT, Markdown and Shelf JSON backups. Text extraction is best-effort; scanned PDFs need OCR and EPUB styling is simplified.
+- Local IndexedDB library, reading progress, chapter navigation, chapter bookmarks, favourites, tags, named collections, book notes, and export as text.
+- Search titles/authors/tags, filter and sort library, grid/list layout, bulk select/favourite/finish/export/delete, and undo the most recent individual deletion until the page is reloaded.
+- Reader controls for theme, font family, size, line spacing, width, alignment, paragraph spacing, hyphenation toggle, high-legibility styling and speech speed.
+- Text-to-speech, chapter search, whole-book chapter search, saved reading-position bookmarks, swipe navigation on touch devices.
+- Daily reading goal and local reading-time tracking.
+- Standard JSON backup and password-encrypted AES-GCM backup/restore.
 
-Then open `http://localhost:8000`.
+## Privacy
+All library data is stored locally in this browser. No account or cloud sync is implemented. Encrypted backups use AES-GCM with PBKDF2-SHA256 key derivation; Shelf cannot recover a forgotten password. Original uploaded EPUB/PDF binaries are not retained; book export is extracted text.
 
-## Deploy
-Upload all four files to the same directory on an HTTPS static host (GitHub Pages, Cloudflare Pages, etc.). If deploying to a repository subpath, confirm the relative URLs and service-worker scope on the live URL.
-
-## Data and privacy
-Books and settings are stored in IndexedDB in this browser. They are not uploaded to a server by this app. Use **Back up** to download a JSON backup and keep it somewhere safe. Clearing browser/site data can delete the library.
-
-## Import support
-- TXT / Markdown: built-in text parser with chapter-heading detection and paragraph-preserving fallback.
-- EPUB: JSZip is loaded from a CDN when importing; an internet connection is required for that library on first use.
-- PDF: PDF.js is loaded from a CDN when importing; an internet connection is required for that library on first use.
-- Shelf JSON backup: restore via Import.
-
-## Important limitations to review before public launch
-- PDF extraction is text extraction, not OCR; scanned PDFs will not import. PDF pages are combined into reading sections rather than being mislabeled as book chapters.
-- EPUB parsing supports common EPUB 2/3 spine-based books but should be tested against a broad real-world corpus. Formatting is simplified to readable text; complex layouts may not be preserved. EPUB cover extraction and full rich formatting are not implemented in this starter.
-- Browser storage is local and can be cleared by the user or browser. Backups are essential.
-- PWA install/offline behavior must be tested on the actual deployment URL and target browsers.
-- Before a wide release, add automated tests, review dependencies and licenses, and run accessibility/security checks.
+## Dependencies and production readiness
+PDF.js and JSZip are loaded from a CDN on first import. PDF extraction is not OCR and can be imperfect for multi-column or complex layouts. Before public launch, test backup round-trips, imports, offline behavior, accessibility, keyboard and touch interactions, and dependency licenses on real devices.
