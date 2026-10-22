@@ -184,6 +184,139 @@ const shelfOldImport=importFiles;importFiles=async function(files){for(const f o
 // Reader swipe navigation is opt-in by gesture and only triggers for clear horizontal swipes.
 document.addEventListener('touchstart',e=>{if(view==='reader'&&e.touches.length===1)shelfTouch={x:e.touches[0].clientX,y:e.touches[0].clientY};},{passive:true});document.addEventListener('touchend',e=>{if(view!=='reader'||!shelfTouch||!e.changedTouches.length)return;const dx=e.changedTouches[0].clientX-shelfTouch.x,dy=e.changedTouches[0].clientY-shelfTouch.y;shelfTouch=null;if(Math.abs(dx)>100&&Math.abs(dx)>Math.abs(dy)*1.4){if(dx<0)moveChapter(1);else moveChapter(-1);}},{passive:true});
 
+(()=>{
+const ZW='\u200b',SP=/^[A-Z][A-Z .'’-]{2,30}:(?:\s|$)/,SP_MID=/([.!?…”’"')\]])\s+(?=[A-Z][A-Z .'’-]{2,30}:\s)/g;
+const D={splitSpeakers:true,boldSpeakers:true,letterSpacing:0,wordSpacing:0,indent:0,pad:24,dim:100,accent:'',fontStack:'',autoScroll:0,wakeLock:false};
+Object.keys(D).forEach(k=>{if(settings[k]===undefined)settings[k]=D[k];});
+
+/* ---------- extra themes + typography CSS ---------- */
+const st=document.createElement('style');st.textContent=`
+[data-theme=amoled]{color-scheme:dark;--bg:#000;--panel:#0b0c0b;--text:#e6e8e2;--muted:#9aa096;--line:#222622;--accent:#9fd0a8;--accent-ink:#06100a;--soft:#161a16;--shadow:none}
+[data-theme=paper]{color-scheme:light;--bg:#fbfbf8;--panel:#fff;--text:#1d1d1b;--muted:#6d6d66;--line:#e4e4dc;--accent:#2f5d8a;--accent-ink:#fff;--soft:#eef2f6}
+[data-theme=ocean]{color-scheme:dark;--bg:#0f1b26;--panel:#162634;--text:#e3eef7;--muted:#8fa7b8;--line:#243a4b;--accent:#7cc3f0;--accent-ink:#06202f;--soft:#1d3345}
+.reader{letter-spacing:var(--x-ls,0);word-spacing:var(--x-ws,0);padding-left:var(--x-pad,24px);padding-right:var(--x-pad,24px);filter:brightness(var(--x-dim,1))}
+.reader p{text-indent:var(--x-indent,0)}
+.reader p.gap{min-height:1em}
+.reader p b.spk{font-family:system-ui,sans-serif;font-size:.78em;letter-spacing:.05em;opacity:.85}`;
+document.head.append(st);
+
+/* ---------- apply extra settings ---------- */
+const baseApply=applySettings;
+applySettings=function(){baseApply();const s=document.documentElement.style,c=settings;
+ s.setProperty('--x-ls',c.letterSpacing+'em');s.setProperty('--x-ws',c.wordSpacing+'em');
+ s.setProperty('--x-indent',c.indent+'em');s.setProperty('--x-pad',c.pad+'px');s.setProperty('--x-dim',c.dim/100);
+ if(c.accent)s.setProperty('--accent',c.accent);else s.removeProperty('--accent');
+ if(c.fontStack)s.setProperty('--reader-font',c.fontStack);};
+
+/* ---------- PDF import: keep line + paragraph gaps ---------- */
+pdfPageToText=function(items){
+ const rows=[];
+ for(const it of items||[]){
+  if(!it||typeof it.str!=='string'||!it.str.trim())continue;
+  const tr=it.transform||[],x=+tr[4]||0,y=+tr[5]||0,h=+it.height||Math.abs(tr[3]||0)||10;
+  let row=rows.find(r=>Math.abs(r.y-y)<=Math.max(2,h*.35));
+  if(!row){row={y,height:h,items:[]};rows.push(row);}
+  row.height=Math.max(row.height,h);row.items.push({x,width:+it.width||0,text:it.str});
+ }
+ rows.sort((a,b)=>b.y-a.y);
+ const lines=[];
+ for(const row of rows){
+  row.items.sort((a,b)=>a.x-b.x);let line='',right=null;
+  for(const it of row.items){
+   const part=it.text.trim();if(!part)continue;
+   if(line&&right!==null&&it.x-right>row.height*.12)line+=' ';
+   line+=part;right=it.x+(it.width>0?it.width:Math.max(row.height*.2,part.length*row.height*.45));
+  }
+  line=line.replace(/[ \t]+/g,' ').trim();if(line)lines.push({y:row.y,height:row.height,text:line});
+ }
+ const gaps=[];for(let i=1;i<lines.length;i++){const g=lines[i-1].y-lines[i].y;if(g>0)gaps.push(g);}
+ gaps.sort((a,b)=>a-b);
+ const hs=lines.map(l=>l.height).sort((a,b)=>a-b),med=hs.length?hs[hs.length>>1]:10;
+ const pitch=Math.max(gaps.length?gaps[Math.floor((gaps.length-1)*.25)]:0,med*1.05);
+ let out='';
+ for(let i=0;i<lines.length;i++){
+  if(i){
+   const ratio=(lines[i-1].y-lines[i].y)/pitch;
+   if(ratio<1.35)out+='\n';
+   else{out+='\n\n';const extra=Math.min(3,Math.max(0,Math.floor(ratio-1.5)));for(let n=0;n<extra;n++)out+=ZW+'\n\n';}
+  }
+  out+=lines[i].text;
+ }
+ return out.trim();
+};
+
+/* ---------- reader paragraphs (works on already-imported books too) ---------- */
+readerParagraphs=function(text){
+ const raw=String(text||'').replace(/\r\n?/g,'\n').trim();if(!raw)return[];
+ const fmt=settings.textFormat,out=[];
+ for(const block of raw.split(/\n[\t ]*\n+/)){
+  if(block.trim()===ZW){if(fmt==='original')out.push(ZW);continue;}
+  let b=block;if(settings.splitSpeakers)b=b.replace(SP_MID,'$1\n');
+  const lines=b.split('\n').map(x=>x.trim()).filter(Boolean),groups=[];let buf=[];
+  for(const ln of lines){if(settings.splitSpeakers&&buf.length&&SP.test(ln)){groups.push(buf);buf=[];}buf.push(ln);}
+  if(buf.length)groups.push(buf);
+  for(const g of groups)out.push(fmt==='preserve'?g.join('\n'):g.join(' '));
+ }
+ return out;
+};
+
+/* ---------- reader hooks: speaker labels, auto-scroll, wake lock ---------- */
+let autoT=null,wl=null;
+function startAuto(){clearInterval(autoT);autoT=null;if(view!=='reader'||!settings.autoScroll)return;
+ autoT=setInterval(()=>{if(view!=='reader'||document.hidden)return;window.scrollBy({top:settings.autoScroll*.5,behavior:'instant'});},50);}
+async function lockScreen(){try{
+ if(settings.wakeLock&&view==='reader'&&'wakeLock'in navigator&&!wl){wl=await navigator.wakeLock.request('screen');wl.addEventListener('release',()=>{wl=null;});}
+ else if((!settings.wakeLock||view!=='reader')&&wl){await wl.release();wl=null;}
+}catch{}}
+const prevReader=renderReader;
+renderReader=function(){prevReader();const el=$('#reader');if(!el)return;
+ $$('p[data-paragraph]',el).forEach(p=>{const t=p.textContent;
+  if(t===ZW){p.classList.add('gap');return;}
+  if(settings.boldSpeakers){const m=t.match(/^([A-Z][A-Z .'’-]{2,30}:)([\s\S]*)$/);if(m)p.innerHTML='<b class="spk">'+esc(m[1])+'</b>'+esc(m[2]);}
+ });
+ startAuto();lockScreen();};
+const prevHome=renderHome;
+renderHome=function(){prevHome();startAuto();lockScreen();};
+
+/* ---------- settings drawer ---------- */
+const FONTS=[['','Theme default'],["Georgia,'Times New Roman',serif",'Georgia'],["'Palatino Linotype',Palatino,'Book Antiqua',serif",'Palatino'],["Charter,'Bitstream Charter',Cambria,serif",'Charter'],["system-ui,-apple-system,'Segoe UI',sans-serif",'System sans'],["Verdana,Geneva,sans-serif",'Verdana (easy to read)'],["'Trebuchet MS',Arial,sans-serif",'Trebuchet'],["'Courier New',ui-monospace,monospace",'Typewriter']];
+const UNITS={letterSpacing:'em',wordSpacing:'em',indent:'em',pad:'px',dim:'%',autoScroll:''};
+const prevDrawer=openDrawer;
+openDrawer=async function(){await prevDrawer();const d=$('.drawer');if(!d)return;
+ const sel=$('#shelf-text-format');
+ if(sel){if(![...sel.options].some(o=>o.value==='original'))sel.add(new Option('Original PDF gaps (keep spacing)','original'));sel.value=settings.textFormat||'preserve';}
+ const th=$('#theme');
+ if(th){[['amoled','AMOLED black'],['paper','Paper white'],['ocean','Ocean']].forEach(([v,l])=>th.add(new Option(l,v)));th.value=settings.theme;}
+ const rng=(k,l,min,max,step)=>`<div class="setting"><label for="x-${k}">${l} <span id="x-${k}-v">${settings[k]}${UNITS[k]}</span></label><input id="x-${k}" type="range" min="${min}" max="${max}" step="${step}" value="${settings[k]}"></div>`;
+ const tog=(k,l)=>`<div class="setting"><label for="x-${k}">${l}</label><select id="x-${k}" class="field"><option value="true">On</option><option value="false">Off</option></select></div>`;
+ const box=document.createElement('div');
+ box.innerHTML=`<hr style="border:0;border-top:1px solid var(--line);margin:20px 0"><h3 style="margin:0 0 10px">Fine-tune &amp; extras</h3>
+ ${tog('splitSpeakers','New paragraph at each SPEAKER: label')}
+ ${tog('boldSpeakers','Style speaker labels')}
+ <div class="setting"><label for="x-font">Font family</label><select id="x-font" class="field">${FONTS.map(([v,l])=>`<option value="${esc(v)}">${l}</option>`).join('')}</select></div>
+ ${rng('letterSpacing','Letter spacing',-0.02,0.15,0.005)}
+ ${rng('wordSpacing','Word spacing',0,0.6,0.02)}
+ ${rng('indent','First-line indent',0,3,0.25)}
+ ${rng('pad','Side margins',0,80,2)}
+ ${rng('dim','Text brightness',40,100,5)}
+ <div class="setting"><label for="x-accent">Accent colour</label><div class="row"><input id="x-accent" type="color" value="${settings.accent||'#496b56'}" style="width:60px;height:42px;border:0;background:none"><button class="btn" id="x-accent-reset">Use theme colour</button></div></div>
+ ${rng('autoScroll','Auto-scroll speed (0 = off)',0,10,1)}
+ ${tog('wakeLock','Keep screen awake while reading')}
+ <button class="btn" id="x-reset" style="width:100%;margin-top:6px">Reset these extras</button>`;
+ d.append(box);
+ ['letterSpacing','wordSpacing','indent','pad','dim','autoScroll'].forEach(k=>{const el=$('#x-'+k);
+  el.oninput=async()=>{settings[k]=+el.value;$('#x-'+k+'-v').textContent=el.value+UNITS[k];await saveSettings();if(k==='autoScroll')startAuto();};});
+ ['splitSpeakers','boldSpeakers','wakeLock'].forEach(k=>{const el=$('#x-'+k);el.value=String(!!settings[k]);
+  el.onchange=async()=>{settings[k]=el.value==='true';await saveSettings();if(view==='reader'){renderReader();}lockScreen();};});
+ $('#x-font').value=settings.fontStack||'';
+ $('#x-font').onchange=async e=>{settings.fontStack=e.target.value;await saveSettings();};
+ $('#x-accent').oninput=async e=>{settings.accent=e.target.value;await saveSettings();};
+ $('#x-accent-reset').onclick=async()=>{settings.accent='';await saveSettings();};
+ $('#x-reset').onclick=async()=>{Object.assign(settings,D);await saveSettings();$('#overlay')?.remove();if(view==='reader')renderReader();toast('Extras reset.');};
+};
+})();
+
+   
 </script>
 </body>
 </html>
